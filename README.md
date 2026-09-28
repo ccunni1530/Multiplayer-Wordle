@@ -22,3 +22,6 @@ This project is based on the requirements specified in the CMSC 447 Capstone Pro
 
 ### engine
 The directory containing all of the logic for the system. `engine/evaluation` compares the input to the answer and provides feedback (letter presence, placement, etc.). `engine/validation` efficiently performs a word lookup to check that the user input is a real word. For maximum performance, word validation is done before evaluation.
+
+## Dev Setup
+To begin, simply run `./setup.sh` to have the requirements and tools installed in a new .venv inside the directory.
