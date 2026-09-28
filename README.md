@@ -7,10 +7,15 @@ This project is based on the requirements specified in the CMSC 447 Capstone Pro
 ## Components
 
 ├── README.md
+
 ├── docs
+
 ├── engine
+
 │   ├── evaluation
+
 │   └── validation
+
 └── testing
 
 [//]: # (This tree layout can be retrieved by running the "tree" command in bash)
