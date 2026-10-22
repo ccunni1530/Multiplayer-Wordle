@@ -6,8 +6,8 @@ import json
 class ResponseCode(Enum):
     SUCCESS = 0
     INVALID_JSON = -1
-    INVALID_GUESS = -2
-    INVALID_ANSWER = -3
+    INVALID_GUESS = -2 # The guess parameter is invalid (i.e. wrong length or violates constraint)
+    INVALID_ANSWER = -3 # The answer parameter is invalid (i.e. wrong length)
 
 class Feedback(Enum):
     UNCHECKED = 0
@@ -18,6 +18,7 @@ class Feedback(Enum):
 class Evaluation:
     GUESS_FIELD = "guess"
     ANSWER_FIELD = "answer"
+    CONSTRAINT = "constraint"
     RESPONSE_CODE_FIELD = "response_code"
     FEEDBACK_FIELD = "feedback"
     WRONG_LETTER = "b"
@@ -25,6 +26,13 @@ class Evaluation:
     CORRECT_LETTER = "g"
     LETTERS_IN_WORD = 5
 
+    """
+    Gets the raw bytes containing a JSON-formatted guess and evaluates
+    the user submission against a given answer (with an optional
+    constraint check, as well). Returns the raw bytes containing a
+    JSON-formatted response that has G/Y/B feedback alongside a
+    response code.
+    """
     def evaluate_raw(self, raw: bytes) -> bytes:
         try:
             obj = dict(json.loads(raw))
@@ -32,6 +40,12 @@ class Evaluation:
             if not obj.get(self.GUESS_FIELD) or not obj.get(self.ANSWER_FIELD):
                 raise json.JSONDecodeError #TODO: Write custom errors?
             else:
+
+                # Check if the guess fits the current constraint (if any)
+                constraint = obj.get(self.CONSTRAINT)
+                if constraint and not self._check_constraint():
+                    return json.dumps({"response": ResponseCode.INVALID_GUESS.value, "feedback": []})
+
                 response = {
                     self.RESPONSE_CODE_FIELD: ResponseCode.SUCCESS.value,
                     self.FEEDBACK_FIELD: self._compare(obj[self.GUESS_FIELD], obj[self.ANSWER_FIELD])
@@ -42,6 +56,44 @@ class Evaluation:
             print("Unable to decode into JSON")
             return json.dumps({"response": ResponseCode.INVALID_JSON.value, "feedback": []})
 
+    """
+    Checks if the user's guess works within the current constraints of the
+    game. Returns True if it does and False otherwise.
+    """
+    def _check_constraint(self, guess: str, answer: str, constraint: str) -> bool:
+        known_frequencies = {}
+        for i in range(self.LETTERS_IN_WORD):
+
+            # Must be correct letter in position
+            if constraint[i] == self.CORRECT_LETTER and guess[i] != answer[i]:
+                return False
+
+            # Cannot use letter in position the user knows it's not
+            elif constraint[i] in [self.WRONG_LETTER, self.VALID_LETTER] and guess[i] == answer[i]:
+                return False
+
+            # Tally yellow letters to ensure they're all used
+            elif constraint[i] == self.VALID_LETTER:
+                if not known_frequencies.get(answer[i]):
+                    known_frequencies[answer[i]] = 1
+                else:
+                    known_frequencies[answer[i]] += 1
+
+        # Confirm tally match for guess and answer
+        for i in range(self.LETTERS_IN_WORD):
+            if guess[i] in known_frequencies.keys() \
+                and constraint[i] != self.CORRECT_LETTER: # Doesn't double-count greens
+                    known_frequencies[guess[i]] -= 1
+
+        # Ensure yellow letter frequency matches in answer and guess
+        for tally in known_frequencies.values():
+            if tally != 0:
+                return False
+
+    """
+    Returns the difference between the user's guess and the answer in
+    the form of G/Y/B feedback.
+    """
     def _compare(self, user_guess: str, correct_answer: str) -> str:
         
         if len(user_guess) != self.LETTERS_IN_WORD or len(correct_answer) != self.LETTERS_IN_WORD:
