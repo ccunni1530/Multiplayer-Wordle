@@ -9,11 +9,17 @@ class ResponseCode(Enum):
     INVALID_GUESS = -2 # The guess parameter is invalid (i.e. wrong length or violates constraint)
     INVALID_ANSWER = -3 # The answer parameter is invalid (i.e. wrong length)
 
+    def __int__(self):
+        return self.value
+    
 class Feedback(Enum):
     UNCHECKED = 0
     WRONG_LETTER = 1
     VALID_LETTER = 2
     CORRECT_LETTER = 3
+
+    def __int__(self):
+        return self.value
 
 class Evaluation:
     GUESS_FIELD = "guess"
@@ -38,23 +44,23 @@ class Evaluation:
             obj = dict(json.loads(raw))
 
             if not obj.get(self.GUESS_FIELD) or not obj.get(self.ANSWER_FIELD):
-                raise json.JSONDecodeError #TODO: Write custom errors?
+                raise json.JSONDecodeError("Missing fields", "request", 0) #TODO: Write custom errors?
             else:
 
                 # Check if the guess fits the current constraint (if any)
                 constraint = obj.get(self.CONSTRAINT)
                 if constraint and not self._check_constraint():
-                    return json.dumps({"response": ResponseCode.INVALID_GUESS.value, "feedback": []})
+                    return json.dumps({self.RESPONSE_CODE_FIELD: ResponseCode.INVALID_GUESS.value, "feedback": []})
 
                 response = {
                     self.RESPONSE_CODE_FIELD: ResponseCode.SUCCESS.value,
                     self.FEEDBACK_FIELD: self._compare(obj[self.GUESS_FIELD], obj[self.ANSWER_FIELD])
                 }
                 return json.dumps(response)
-            
+
         except json.JSONDecodeError:
             print("Unable to decode into JSON")
-            return json.dumps({"response": ResponseCode.INVALID_JSON.value, "feedback": []})
+            return json.dumps({self.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
 
     """
     Checks if the user's guess works within the current constraints of the
