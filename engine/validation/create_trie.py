@@ -2,6 +2,10 @@
 # create_trie.py
 # File to parse valid word list and create trie of words
 
+from pathlib import Path
+ROOT_DIRECTORY = Path(__file__).resolve().parent.parent.parent 
+WORDS_FILE = ROOT_DIRECTORY / "resources" / "wordle-valid-words.txt"
+
 # create trie
 class Node:
     def __init__(self):
@@ -51,7 +55,7 @@ class Trie:
 trie = Trie()
 
 # open wordle-valid-words.txt and parse all the valid words to an array word_list
-with open('../../resources/wordle-valid-words.txt', 'r') as file:
+with open(WORDS_FILE, 'r') as file:
     for line in file:
         # first check that the line is not a comment or empty
         if line[0] != "#" and line != "\n":
