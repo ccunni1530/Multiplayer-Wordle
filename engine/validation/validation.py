@@ -1,22 +1,22 @@
-##Trey working on this section
-##Then efficiently performs a word lookup to check that the user input is a real word.
-##Validate that the word guessed by the user is one of the 8636 real 5-letter words provided in the wordle dictionary. Create a search function to traverse trie data structure.
+# CMSC447 - Multiplayer-Wordle
+# validation.py
+# File to validate wordle guesses
 
+import engine.validation.create_trie as create_trie
 
-import create_trie
+def is_valid(word):
 
-def is_valid(trie, word):
-
+    trie = create_trie.trie
     ##Check for valid length (may not matter at all)
     if len(word) != 5:
         return False
 
+    ##make sure word matches format of our library
+    word = word.strip().upper()
+
     ##check for valid chars
     if not all('A' <= c <= 'Z' for c in word):
         return False
-
-    ##make sure word matches format of our library
-    word = word.strip().upper()
 
 
     return trie.search(word)
