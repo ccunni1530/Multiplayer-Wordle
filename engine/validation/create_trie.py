@@ -60,3 +60,5 @@ with open(WORDS_FILE, 'r') as file:
         # first check that the line is not a comment or empty
         if line[0] != "#" and line != "\n":
             trie.insert(line.strip())
+
+            
