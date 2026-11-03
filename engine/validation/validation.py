@@ -1,7 +1,3 @@
-# CMSC447 - Multiplayer-Wordle
-# validation.py
-# File to validate wordle guesses
-
 import engine.validation.create_trie as create_trie
 
 def is_valid(word):

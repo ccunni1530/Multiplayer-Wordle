@@ -1,8 +1,3 @@
-# CMSC447 - Multiplayer-Wordle
-# test_valid.py
-# File to test the validation of wordle guesses
-
-
 from engine.validation.validation import is_valid
 
 
