@@ -1,7 +1,12 @@
+"""
+Short demo script to simulate a Wordle application that makes use of the engine.
+This is intended to be run from the root directory, like so:
+'python3 demo/demo.py'
+"""
 import sys, json
 sys.path.append(".")
 from engine.validation.validation import is_valid
-from engine.evaluation.evaluator import *
+from engine.evaluation.evaluator import Evaluation
 from random import choice
 
 def get_random_word() -> str:
