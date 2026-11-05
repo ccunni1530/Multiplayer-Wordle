@@ -25,6 +25,7 @@ class Evaluation:
     GUESS_FIELD = "guess"
     ANSWER_FIELD = "answer"
     CONSTRAINT = "constraint"
+    KNOWN_LETTERS = "known_letters"
     RESPONSE_CODE_FIELD = "response_code"
     FEEDBACK_FIELD = "feedback"
     WRONG_LETTER = "b"
@@ -39,56 +40,64 @@ class Evaluation:
     JSON-formatted response that has G/Y/B feedback alongside a
     response code.
     """
-    def evaluate_raw(self, raw: bytes) -> bytes:
+    @classmethod
+    def evaluate_raw(cls, raw: bytes) -> bytes:
         try:
             obj = dict(json.loads(raw))
 
-            if not obj.get(self.GUESS_FIELD) or not obj.get(self.ANSWER_FIELD):
+            if not obj.get(cls.GUESS_FIELD) or not obj.get(cls.ANSWER_FIELD):
                 raise json.JSONDecodeError("Missing fields", "request", 0) #TODO: Write custom errors?
             else:
 
                 # Check if the guess fits the current constraint (if any)
-                constraint = obj.get(self.CONSTRAINT)
-                if constraint and not self._check_constraint():
-                    return json.dumps({self.RESPONSE_CODE_FIELD: ResponseCode.INVALID_GUESS.value, "feedback": []})
-
+                guess = obj.get(cls.GUESS_FIELD)
+                answer = obj.get(cls.ANSWER_FIELD)
+                constraint = obj.get(cls.CONSTRAINT)
+                known_letters = obj.get(cls.KNOWN_LETTERS)
+                if constraint and known_letters and not cls._check_constraint(guess, answer, constraint, known_letters):
+                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_GUESS.value, "feedback": []})
+                elif constraint and not known_letters:
+                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
+                    
                 response = {
-                    self.RESPONSE_CODE_FIELD: ResponseCode.SUCCESS.value,
-                    self.FEEDBACK_FIELD: self._compare(obj[self.GUESS_FIELD], obj[self.ANSWER_FIELD])
+                    cls.RESPONSE_CODE_FIELD: ResponseCode.SUCCESS.value,
+                    cls.FEEDBACK_FIELD: cls._compare(obj[cls.GUESS_FIELD], obj[cls.ANSWER_FIELD])
                 }
                 return json.dumps(response)
 
         except json.JSONDecodeError:
             print("Unable to decode into JSON")
-            return json.dumps({self.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
+            return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
 
     """
     Checks if the user's guess works within the current constraints of the
     game. Returns True if it does and False otherwise.
     """
-    def _check_constraint(self, guess: str, answer: str, constraint: str) -> bool:
+    @classmethod
+    def _check_constraint(cls, guess: str, answer: str, constraint: str, \
+                          known_letters: str) -> bool:
         known_frequencies = {}
-        for i in range(self.LETTERS_IN_WORD):
+        for i in range(cls.LETTERS_IN_WORD):
 
             # Must be correct letter in position
-            if constraint[i] == self.CORRECT_LETTER and guess[i] != answer[i]:
+            if constraint[i] == cls.CCORRECT_LETTER and guess[i] != answer[i]:
                 return False
 
             # Cannot use letter in position the user knows it's not
-            elif constraint[i] in [self.WRONG_LETTER, self.VALID_LETTER] and guess[i] == answer[i]:
+            elif constraint[i] in [cls.WRONG_LETTER, cls.VALID_LETTER] and guess[i] == answer[i]:
                 return False
 
             # Tally yellow letters to ensure they're all used
-            elif constraint[i] == self.VALID_LETTER:
+            elif constraint[i] == cls.VALID_LETTER:
                 if not known_frequencies.get(answer[i]):
                     known_frequencies[answer[i]] = 1
                 else:
                     known_frequencies[answer[i]] += 1
 
         # Confirm tally match for guess and answer
-        for i in range(self.LETTERS_IN_WORD):
+        for i in range(cls.LETTERS_IN_WORD):
             if guess[i] in known_frequencies.keys() \
-                and constraint[i] != self.CORRECT_LETTER: # Doesn't double-count greens
+                and constraint[i] != cls.CORRECT_LETTER: # Doesn't double-count greens
                     known_frequencies[guess[i]] -= 1
 
         # Ensure yellow letter frequency matches in answer and guess
@@ -100,9 +109,10 @@ class Evaluation:
     Returns the difference between the user's guess and the answer in
     the form of G/Y/B feedback.
     """
-    def _compare(self, user_guess: str, correct_answer: str) -> str:
+    @classmethod
+    def _compare(cls, user_guess: str, correct_answer: str) -> str:
         
-        if len(user_guess) != self.LETTERS_IN_WORD or len(correct_answer) != self.LETTERS_IN_WORD:
+        if len(user_guess) != cls.LETTERS_IN_WORD or len(correct_answer) != cls.LETTERS_IN_WORD:
             return None
         
         to_match = []
@@ -113,26 +123,23 @@ class Evaluation:
         for i in range(len(user_guess)):
             colored = False
             for j in range(len(to_match)):
-                print(f"Comparing {user_guess[i]} to {to_match[j][0]} with feedback {to_match[j][1]}")
 
                 # Green letters must be in the same position and match the letter
                 if i == j and user_guess[i] == to_match[j][0]:
                     to_match[j] = (to_match[j][0], Feedback.CORRECT_LETTER)
-                    match_feedback += self.CORRECT_LETTER
+                    match_feedback += cls.CORRECT_LETTER
                     colored = True
                     break
 
                 # Yellow letters only appear if the letter it matches to isn't already perfectly matched
                 elif user_guess[i] == to_match[j][0] and to_match[j][0] != user_guess[j]:
                     to_match[j] = (to_match[j][0], Feedback.VALID_LETTER)
-                    match_feedback += self.VALID_LETTER
+                    match_feedback += cls.VALID_LETTER
                     colored = True
                     break
 
             # Black letters will appear even if the letter is in the answer but is covered by a previous yellow
             if not colored:
-                match_feedback += self.WRONG_LETTER
+                match_feedback += cls.WRONG_LETTER
 
         return match_feedback
-
-#print(Evaluation().evaluate_raw(b'{"guess": "bbcde", "answer": "abcde"}'))
