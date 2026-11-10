@@ -25,9 +25,10 @@ class Evaluation:
     GUESS_FIELD = "guess"
     ANSWER_FIELD = "answer"
     CONSTRAINT = "constraint"
-    KNOWN_LETTERS = "known_letters"
+    KNOWN_LETTERS = "known_letter_positions"
     RESPONSE_CODE_FIELD = "response_code"
     FEEDBACK_FIELD = "feedback"
+    ABSENT_LETTERS_FIELD = "known_absent_letters"
     WRONG_LETTER = "b"
     VALID_LETTER = "y"
     CORRECT_LETTER = "g"
@@ -53,11 +54,12 @@ class Evaluation:
                 guess = obj.get(cls.GUESS_FIELD)
                 answer = obj.get(cls.ANSWER_FIELD)
                 constraint = obj.get(cls.CONSTRAINT)
-                known_letters = obj.get(cls.KNOWN_LETTERS)
-                if constraint and known_letters and not cls._check_constraint(guess, answer, constraint, known_letters):
-                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_GUESS.value, "feedback": []})
-                elif constraint and not known_letters:
-                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
+                known_letter_positions = obj.get(cls.KNOWN_LETTERS)
+                known_absent_letters = obj.get(cls.ABSENT_LETTERS_FIELD)
+                if constraint and (not known_letter_positions or not known_absent_letters):
+                                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
+                if constraint and cls._check_constraint(guess, answer, constraint, known_letter_positions, known_absent_letters) is False:
+                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_GUESS.value, "feedback": []})     
                     
                 response = {
                     cls.RESPONSE_CODE_FIELD: ResponseCode.SUCCESS.value,
@@ -70,25 +72,42 @@ class Evaluation:
             return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
 
     """
+    Checks the yellow letter positioning so that the user doesn't try
+    a letter in a place that was previously yellow (or black).
+
+    Example: 
+    Guess 1 is "sandy" and returns ygggb
+    Guess 2 will return False if the first letter is 's'
+    """
+    def _check_yellow(cls, known, guess, ans, i) -> bool: 
+        if known[i] == "x":
+             return True
+        pos = int(known[i])
+        return guess[i] != ans[pos]
+
+    """
     Checks if the user's guess works within the current constraints of the
     game. Returns True if it does and False otherwise.
     """
     @classmethod
     def _check_constraint(cls, guess: str, answer: str, constraint: str, \
-                          known_letters: str) -> bool:
+                          known_letter_positions: str, absent_letters: str) -> bool:
         known_frequencies = {}
         for i in range(cls.LETTERS_IN_WORD):
 
             # Must be correct letter in position
-            if constraint[i] == cls.CCORRECT_LETTER and guess[i] != answer[i]:
+            if constraint[i] == cls.CORRECT_LETTER and guess[i] != answer[i]:
                 return False
 
-            # Cannot use letter in position the user knows it's not
-            elif constraint[i] in [cls.WRONG_LETTER, cls.VALID_LETTER] and guess[i] == answer[i]:
+            # Cannot use letters known to be absent
+            if constraint[i] == cls.WRONG_LETTER and guess[i] in absent_letters:
                 return False
+
+            if constraint[i] == cls.VALID_LETTER and cls._check_yellow(cls, known_letter_positions, guess, answer, i):
+                 return False
 
             # Tally yellow letters to ensure they're all used
-            elif constraint[i] == cls.VALID_LETTER:
+            if constraint[i] == cls.VALID_LETTER:
                 if not known_frequencies.get(answer[i]):
                     known_frequencies[answer[i]] = 1
                 else:
@@ -102,8 +121,10 @@ class Evaluation:
 
         # Ensure yellow letter frequency matches in answer and guess
         for tally in known_frequencies.values():
-            if tally != 0:
+            if tally > 0:
                 return False
+
+        return True
 
     """
     Returns the difference between the user's guess and the answer in
