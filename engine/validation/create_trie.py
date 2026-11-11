@@ -1,10 +1,7 @@
-# Cmsc447 - Multiplayer-Wordle
-# create_trie.py
-# File to parse valid word list and create trie of words
-
 from pathlib import Path
+
 ROOT_DIRECTORY = Path(__file__).resolve().parent.parent.parent 
-WORDS_FILE = ROOT_DIRECTORY / "resources" / "wordle-valid-words.txt"
+DEFAULT_WORDS_FILE = ROOT_DIRECTORY / "resources" / "wordle-valid-words.txt"
 
 # create trie
 class Node:
@@ -13,8 +10,17 @@ class Node:
         self.isEndOfWord = False
 
 class Trie:
-    def __init__(self):
+    def __init__(self, words_file=DEFAULT_WORDS_FILE):
         self.root = Node()
+        self.words_file = Path(words_file)
+        self.load_words_from_file()
+
+    def load_words_from_file(self):
+        with open(self.words_file, 'r') as file:
+            for line in file:
+                # first check that the line is not a comment or empty
+                if line[0] != "#" and line != "\n":
+                    self.insert(line.strip())
 
     # function to insert word into trie 
     def insert(self, word):
@@ -53,12 +59,3 @@ class Trie:
 
 # Create Trie object
 trie = Trie()
-
-# open wordle-valid-words.txt and parse all the valid words to an array word_list
-with open(WORDS_FILE, 'r') as file:
-    for line in file:
-        # first check that the line is not a comment or empty
-        if line[0] != "#" and line != "\n":
-            trie.insert(line.strip())
-
-            

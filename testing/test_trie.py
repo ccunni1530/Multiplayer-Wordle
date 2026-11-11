@@ -1,8 +1,3 @@
-# Cmsc447 - Multiplayer-Wordle
-# test_trie.py
-# File to test that all valid wordle guesses are properly added to the trie
-
-# To run: python -m pytest testing/test_trie.py
 import json
 from engine.validation.create_trie import Node, trie
 
@@ -11,7 +6,7 @@ from engine.validation.create_trie import Node, trie
 def setup_word_list_english():
     word_list = []
 
-    with open("resources/wordle-valid-words.txt", "r") as file:
+    with open(trie.words_file, "r") as file:
         for line in file:
             # first check that the line is not a comment or empty
             if line[0] != "#" and line != "\n":
