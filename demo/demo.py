@@ -19,6 +19,7 @@ if __name__ == "__main__":
     while repeat:
         playing = True
         answer = get_random_word()
+        count = 0
         
         while playing:
             guess = input("Guess a 5-letter word: ")
@@ -34,6 +35,11 @@ if __name__ == "__main__":
                     if feedback == "ggggg":
                         print("You win!")
                         playing = False
+                    else:
+                        count += 1
+                        if count >= 6:
+                            print(f"You lose! Word is {answer}")
+                            playing = False
             else:
                 print("Invalid word! Try again.")
 

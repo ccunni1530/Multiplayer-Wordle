@@ -26,6 +26,7 @@ def test_english_trie():
 
     for word in word_list:
         result = trie.search(word)
+        
         if result:
             correct_words_count = correct_words_count + 1
 
