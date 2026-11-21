@@ -1,7 +1,7 @@
 from enum import Enum
+import io
 import json
-#TODO: Implement logging
-#import logging
+import logging
 
 class ResponseCode(Enum):
     SUCCESS = 0
@@ -33,6 +33,19 @@ class Evaluation:
     VALID_LETTER = "y"
     CORRECT_LETTER = "g"
     LETTERS_IN_WORD = 5
+    _logger = logging.Logger("Evaluation")
+    _stream = io.StringIO()
+    _handler = logging.StreamHandler(_stream)
+    _logger.addHandler(_handler)
+
+    """
+    Export collected logs to string.
+    """
+    @classmethod
+    def get_logs(cls) -> str:
+        cls._handler.flush()
+        cls._stream.seek(0)
+        return cls._stream.read()
 
     """
     Gets the raw bytes containing a JSON-formatted guess and evaluates
@@ -47,6 +60,7 @@ class Evaluation:
             obj = dict(json.loads(raw))
 
             if not obj.get(cls.GUESS_FIELD) or not obj.get(cls.ANSWER_FIELD):
+                cls._logger.error("Missing 'request' field")
                 raise json.JSONDecodeError("Missing fields", "request", 0) #TODO: Write custom errors?
             else:
 
@@ -57,18 +71,22 @@ class Evaluation:
                 known_letter_positions = obj.get(cls.KNOWN_LETTERS)
                 known_absent_letters = obj.get(cls.ABSENT_LETTERS_FIELD)
                 if constraint and (known_letter_positions is None or known_absent_letters is None):
-                                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
+                    cls._logger.info("Failed to parse JSON")
+                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
                 if constraint and cls._check_constraint(guess, answer, constraint, known_letter_positions, known_absent_letters) is False:
+                    cls._logger.info("Invalid guess submitted")
                     return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_GUESS.value, "feedback": []})     
                     
                 response = {
                     cls.RESPONSE_CODE_FIELD: ResponseCode.SUCCESS.value,
                     cls.FEEDBACK_FIELD: cls._compare(obj[cls.GUESS_FIELD], obj[cls.ANSWER_FIELD])
                 }
+                cls._logger.info("Evaluation successful")
+                cls._logger.debug(response)
                 return json.dumps(response)
 
         except json.JSONDecodeError:
-            print("Unable to decode into JSON")
+            cls._logger.error("Unable to decode into JSON")
             return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
 
     """
