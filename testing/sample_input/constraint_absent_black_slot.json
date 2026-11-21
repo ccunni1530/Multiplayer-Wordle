@@ -1,0 +1,7 @@
+{
+    "guess": "bandy", 
+    "answer": "hands", 
+    "constraint": "ygggb", 
+    "known_letter_positions": "4xxxx", 
+    "known_absent_letters": "y"
+}

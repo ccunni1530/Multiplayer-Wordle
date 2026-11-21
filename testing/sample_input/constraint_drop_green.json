@@ -1,0 +1,7 @@
+{
+    "guess": "wands", 
+    "answer": "hands", 
+    "constraint": "gbbyb", 
+    "known_letter_positions": "xxx4x", 
+    "known_absent_letters": "ore"
+}

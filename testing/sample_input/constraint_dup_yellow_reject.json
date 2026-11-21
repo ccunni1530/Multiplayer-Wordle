@@ -1,0 +1,7 @@
+{
+    "guess": "otbxy", 
+    "answer": "taboo", 
+    "constraint": "yyyyb", 
+    "known_letter_positions": "2340x",
+    "known_absent_letters": "s"
+}
