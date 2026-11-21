@@ -113,7 +113,7 @@ class Evaluation:
         for i in range(len(user_guess)):
             colored = False
             for j in range(len(to_match)):
-                print(f"Comparing {user_guess[i]} to {to_match[j][0]} with feedback {to_match[j][1]}")
+              #  print(f"Comparing {user_guess[i]} to {to_match[j][0]} with feedback {to_match[j][1]}")
 
                 # Green letters must be in the same position and match the letter
                 if i == j and user_guess[i] == to_match[j][0]:
