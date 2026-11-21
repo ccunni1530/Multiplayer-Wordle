@@ -56,7 +56,7 @@ class Evaluation:
                 constraint = obj.get(cls.CONSTRAINT)
                 known_letter_positions = obj.get(cls.KNOWN_LETTERS)
                 known_absent_letters = obj.get(cls.ABSENT_LETTERS_FIELD)
-                if constraint and (not known_letter_positions or not known_absent_letters):
+                if constraint and (known_letter_positions is None or known_absent_letters is None):
                                     return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
                 if constraint and cls._check_constraint(guess, answer, constraint, known_letter_positions, known_absent_letters) is False:
                     return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_GUESS.value, "feedback": []})     
@@ -81,9 +81,9 @@ class Evaluation:
     """
     def _check_yellow(cls, known, guess, ans, i) -> bool: 
         if known[i] == "x":
-             return True
+             return False
         pos = int(known[i])
-        return guess[i] != ans[pos]
+        return guess[i] == ans[pos]
 
     """
     Checks if the user's guess works within the current constraints of the
@@ -100,7 +100,7 @@ class Evaluation:
                 return False
 
             # Cannot use letters known to be absent
-            if constraint[i] == cls.WRONG_LETTER and guess[i] in absent_letters:
+            if guess[i] in absent_letters:
                 return False
 
             if constraint[i] == cls.VALID_LETTER and cls._check_yellow(cls, known_letter_positions, guess, answer, i):
@@ -108,10 +108,10 @@ class Evaluation:
 
             # Tally yellow letters to ensure they're all used
             if constraint[i] == cls.VALID_LETTER:
-                if not known_frequencies.get(answer[i]):
-                    known_frequencies[answer[i]] = 1
+                if not known_frequencies.get(answer[int(known_letter_positions[i])]):
+                    known_frequencies[answer[int(known_letter_positions[i])]] = 1
                 else:
-                    known_frequencies[answer[i]] += 1
+                    known_frequencies[answer[int(known_letter_positions[i])]] += 1
 
         # Confirm tally match for guess and answer
         for i in range(cls.LETTERS_IN_WORD):
