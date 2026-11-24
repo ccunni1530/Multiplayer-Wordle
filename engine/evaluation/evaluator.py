@@ -39,6 +39,13 @@ class Evaluation:
     _logger.addHandler(_handler)
 
     """
+    Set the class' word length to check.
+    """
+    @classmethod
+    def set_word_length(cls, length: int):
+        cls.LETTERS_IN_WORD = length
+
+    """
     Export collected logs to string.
     """
     @classmethod
