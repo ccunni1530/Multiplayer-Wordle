@@ -3,12 +3,12 @@
 import json
 import random
 from engine.validation.validation import is_valid
-from engine.validation.create_trie import trie, WORDS_FILE
+from engine.validation.create_trie import trie
 
 
 # Test for valid words from the words file
 def test_valid_word():
-    with open(WORDS_FILE, 'r') as file:
+    with open(trie.words_file, 'r') as file:
         for line in file:
             if line[0] != "#" and line != "\n":
                 assert is_valid(line.strip()) == True
@@ -27,7 +27,7 @@ def test_invalid_word():
 # Test for randomly generated invalid words
 def test_random_invalid_word():
     word_list = []
-    with open(WORDS_FILE, 'r') as file:
+    with open(trie.words_file, 'r') as file:
         for line in file:
             if line[0] != "#" and line != "\n":
                 word_list.append(line.strip())
