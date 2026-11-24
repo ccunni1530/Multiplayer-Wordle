@@ -81,9 +81,9 @@ class Evaluation:
                 
                 # Ensure known letter positions only contains digits and/or 'x' (wildcard)
                 for char in known_letter_positions:
-                    if not str.isdigit(char) or char != 'x':
+                    if not str.isdigit(char) and char != 'x':
                         raise json.JSONDecodeError
-                    if str.isdigit(char) and not int(char) in range(cls.LETTERS_IN_WORD):
+                    if str.isdigit(char) and int(char) not in range(cls.LETTERS_IN_WORD):
                         raise json.JSONDecodeError
                     
                 known_absent_letters = obj.get(cls.ABSENT_LETTERS_FIELD)
