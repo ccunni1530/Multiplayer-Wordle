@@ -57,19 +57,36 @@ class Evaluation:
     @classmethod
     def evaluate_raw(cls, raw: bytes) -> bytes:
         try:
-            obj = dict(json.loads(raw))
+            try:
+                obj = dict(json.loads(raw))
+            except TypeError:
+                raise json.JSONDecodeError
 
             if not obj.get(cls.GUESS_FIELD) or not obj.get(cls.ANSWER_FIELD):
                 cls._logger.error("Missing 'request' field")
                 raise json.JSONDecodeError("Missing fields", "request", 0) #TODO: Write custom errors?
             else:
 
-                # Check if the guess fits the current constraint (if any)
                 guess = obj.get(cls.GUESS_FIELD)
                 answer = obj.get(cls.ANSWER_FIELD)
+
+                # Validate input
+                if len(guess) != cls.LETTERS_IN_WORD:
+                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_GUESS.value, "feedback": []})
+                elif len(answer) != cls.LETTERS_IN_WORD:
+                    return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_ANSWER.value, "feedback": []})
+
                 constraint = obj.get(cls.CONSTRAINT)
                 known_letter_positions = obj.get(cls.KNOWN_LETTERS)
+                
+                # Ensure known letter positions only contains digits and/or 'x' (wildcard)
+                for char in known_letter_positions:
+                    if not str.isdigit(char) or char != 'x':
+                        raise json.JSONDecodeError
+                    
                 known_absent_letters = obj.get(cls.ABSENT_LETTERS_FIELD)
+
+                # Check if the guess fits the current constraint (if any)
                 if constraint and (known_letter_positions is None or known_absent_letters is None):
                     cls._logger.info("Failed to parse JSON")
                     return json.dumps({cls.RESPONSE_CODE_FIELD: ResponseCode.INVALID_JSON.value, "feedback": []})
