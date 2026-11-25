@@ -1,0 +1,6 @@
+{
+    "guess": "hands", 
+    "answer": "hands", 
+    "constraint": "gbbyb", 
+    "known_absent_letters": "ore"
+}
